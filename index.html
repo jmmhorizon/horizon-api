@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chatbot Demo - Horizon</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; background:#f7f8fa; margin:0; padding:24px; }
+    h1 { margin:0 0 16px; }
+    .card { max-width: 680px; margin: 0 auto; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; box-shadow: 0 6px 18px rgba(0,0,0,.04); }
+    #chat { width:100%; height:380px; border:1px solid #e5e7eb; border-radius:10px; padding:12px; overflow-y:auto; background:#fcfcfd; white-space:pre-wrap; }
+    .row { display:flex; gap:8px; margin-top:12px; }
+    input[type="text"] { flex:1; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px; font-size:16px; }
+    button { padding:10px 14px; border:0; border-radius:10px; cursor:pointer; background:#111827; color:#fff; font-weight:600; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .me { color:#0ea5e9; font-weight:600; }
+    .bot { color:#16a34a; font-weight:600; }
+    .sys { color:#6b7280; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Chatbot Demo – Horizon</h1>
+    <div id="chat">Bot: ¡Hola! Soy el asistente de Horizon. ¿En qué puedo ayudarte?</div>
+
+    <div class="row">
+      <input id="message" type="text" placeholder="Escribe un mensaje…" />
+      <button id="sendBtn" onclick="sendMessage()">Enviar</button>
+    </div>
+  </div>
+
+  <script>
+    // *** Usa tu API en Render ***
+    const API_URL = "https://horizon-api-o3t0.onrender.com/chat";
+
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("message");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function append(line, cls = "") {
+      chat.textContent += "\n" + line;
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+      append("Tú: " + text, "me");
+      input.value = "";
+      input.focus();
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          append("Bot: (error) " + (err.error || res.statusText), "sys");
+        } else {
+          const data = await res.json();
+          append("Bot: " + (data.reply || "(sin respuesta)"), "bot");
+        }
+      } catch (e) {
+        append("Bot: Hubo un problema de red. Intenta de nuevo.", "sys");
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    // Enviar con Enter
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
+</body>
+</html>
+
